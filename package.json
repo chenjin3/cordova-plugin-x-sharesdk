@@ -1,0 +1,27 @@
+{
+  "name": "ShareSDK",
+  "version": "0.1.1",
+  "description": "Cordova Plugin for ShareSDK",
+  "cordova": {
+    "id": "cordova-plugin-x-sharesdk",
+    "platforms": [
+      "ios"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/chenjin3/cordova-plugin-x-sharesdk.git"
+  },
+  "keywords": [
+    "cordova",
+    "sharesdk",
+    "ecosystem:cordova",
+    "cordova-ios"
+  ],
+  "author": "chenjin",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/chenjin3/cordova-plugin-x-sharesdk/issues"
+  },
+  "homepage": "https://github.com/chenjin3/cordova-plugin-x-sharesdk#readme"
+}

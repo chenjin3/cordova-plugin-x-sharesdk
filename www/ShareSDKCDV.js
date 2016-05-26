@@ -214,7 +214,7 @@ IOSAPICaller.prototype = {
 
     cordova.exec(this.callback, function (err) {
       alert('原生代码调用返回错误');
-    }, "ShareSDKCDV", "dispatcher", ['call', request.method, request.seqId, this.getParams(request.seqId)]);
+    }, "ShareSDK", "dispatcher", ['call', request.method, request.seqId, this.getParams(request.seqId)]);
 
   }
 
