@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="cordova-plugin-x-sharesdk" version="0.1.1">
+  <name>ShareSDK</name>
+  <description>Cordova Plugin for ShareSDK</description>
+  <license>Apache 2.0</license>
+  <keywords>cordova,sharesdk</keywords>
+  <js-module src="www/ShareSDKCDV.js" name="ShareSDK">
+    <clobbers target="ShareSDK" />
+  </js-module>
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*">
+      <feature name="ShareSDK">
+        <param name="ios-package" value="ShareSDKCDV"/>
+      </feature>
+    </config-file>
+    <header-file src="src/ios/ShareSDKCDV.h" />
+    <source-file src="src/ios/ShareSDKCDV.m" />
+  </platform>
+</plugin>
