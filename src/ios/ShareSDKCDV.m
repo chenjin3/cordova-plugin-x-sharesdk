@@ -59,6 +59,18 @@ static UIView *_refView = nil;
 
 @implementation ShareSDKCDV
 
+-(void) getLocalUserInfo:(CDVInvokedUrlCommand *)command {
+    NSDictionary* dict = [self getLocalUser];
+    CDVPluginResult* pluginResult = nil;
+    if(dict) {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict];
+    }else {
+         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
+}
+
 -(void) dispatcher:(CDVInvokedUrlCommand *)command {
     NSString* type = [command.arguments objectAtIndex:0];
 
@@ -182,12 +194,12 @@ static UIView *_refView = nil;
  */
 - (void)resultWithData:(NSDictionary *)data command:(CDVInvokedUrlCommand *)command
 {
-    NSString* responseJson = [MOBFJson jsonStringFromObject:data];
+    //NSString* responseJson = [MOBFJson jsonStringFromObject:data];
     CDVPluginResult* pluginResult = nil;
     if(data[@"error"] ) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
     }else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:responseJson];
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:data];
 
     }
        // The sendPluginResult method is thread-safe.
@@ -326,6 +338,28 @@ static UIView *_refView = nil;
     [self resultWithData:responseDict command:command];
 }
 
+- (void) setLocalUser:(SSDKUser*) user{
+    NSDictionary* dict = @{@"uid":[@"s" stringByAppendingString:user.uid],@"nickname":user.nickname,@"icon":user.icon,
+                           @"gender": [NSString stringWithFormat:@"%lu",(unsigned long)user.gender], @"platform": [NSString stringWithFormat:@"%lu", (unsigned long)user.platformType]};
+    NSMutableDictionary * mutableDict = [NSMutableDictionary dictionary];
+    [mutableDict addEntriesFromDictionary:dict];
+    if(user.platformType == SSDKPlatformTypeWechat) {
+        mutableDict[@"rawData"] = user.rawData;
+    }
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSString *keyStr = [NSString stringWithFormat:@"SSDKUser"];
+    [defaults setObject:mutableDict forKey:keyStr];
+    [defaults synchronize];
+
+}
+-(NSDictionary*) getLocalUser {
+    NSDictionary * dict = nil;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSString *keyStr = [NSString stringWithFormat:@"SSDKUser"];
+    dict = [defaults objectForKey:keyStr];
+    return dict;
+};
+
 /**
  *	@brief	用户授权
  *
@@ -350,6 +384,12 @@ static UIView *_refView = nil;
     [ShareSDK authorize:type
                settings:nil
          onStateChanged:^(SSDKResponseState state, SSDKUser *user, NSError *error) {
+           if(state == SSDKResponseStateSuccess) {
+               [self setLocalUser:user];
+               NSLog(@"rawData: %@", user.rawData);
+               NSLog(@"credential: %@", user.credential);
+           }
+
              //返回
              NSMutableDictionary *responseDict = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                                   [NSNumber numberWithInteger:[seqId integerValue]],
@@ -360,8 +400,8 @@ static UIView *_refView = nil;
                                                   @"state",
                                                   [NSNumber numberWithInteger:type],
                                                   @"platform",
-                                                  callback,
-                                                  @"callback",
+                                                  [self getLocalUser],
+                                                  @"data",
                                                   nil];
              if (error)
              {
@@ -833,6 +873,8 @@ static UIView *_refView = nil;
     {
         types = [params objectForKey:@"platforms"];
     }
+    
+    //NSMutableArray *activePlatforms = [NSMutableArray arrayWithArray:[ShareSDK activePlatforms]];
 
     NSMutableDictionary *content = nil;
     if ([[params objectForKey:@"shareParams"] isKindOfClass:[NSDictionary class]])
@@ -866,56 +908,63 @@ static UIView *_refView = nil;
 
         [vc.view addSubview:_refView];
     }
+//    else{
+//        _refView = [[[[[UIApplication sharedApplication] delegate] window] rootViewController] view];
+//    }
 
     NSString *callback = nil;
     if ([[params objectForKey:@"callback"] isKindOfClass:[NSString class]])
     {
         callback = [params objectForKey:@"callback"];
     }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [ShareSDK showShareActionSheet:_refView
+                                 items:types //activePlatforms
+                           shareParams:content
+                   onShareStateChanged:^(SSDKResponseState state, SSDKPlatformType platformType, NSDictionary *userData,
+                                         SSDKContentEntity *contentEntity, NSError *error, BOOL end) {
+                       //返回
+                       NSMutableDictionary *responseDict = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                                                            [NSNumber numberWithInteger:[seqId integerValue]],
+                                                            @"seqId",
+                                                            showShareMenu,
+                                                            @"method",
+                                                            [NSNumber numberWithInteger:state],
+                                                            @"state",
+                                                            [NSNumber numberWithInteger:platformType],
+                                                            @"platform",
+                                                            [NSNumber numberWithBool:end],
+                                                            @"end",
+                                                            callback,
+                                                            @"callback",
+                                                            nil];
+                       if (error)
+                       {
+                           [responseDict setObject:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                    [NSNumber numberWithInteger:[error code]],
+                                                    @"error_code",
+                                                    [error userInfo],
+                                                    @"error_msg",
+                                                    nil]
+                                            forKey:@"error"];
+                       }
+                       
+                       if ([contentEntity rawData])
+                       {
+                           [responseDict setObject:[contentEntity rawData] forKey:@"data"];
+                       }
+                       
+                       [self resultWithData:responseDict command:command];
+                       
+                       if (_refView)
+                       {
+                           [_refView removeFromSuperview];
+                       }
+                   }];
 
-    [ShareSDK showShareActionSheet:_refView
-                             items:types
-                       shareParams:content
-               onShareStateChanged:^(SSDKResponseState state, SSDKPlatformType platformType, NSDictionary *userData, SSDKContentEntity *contentEntity, NSError *error, BOOL end) {
-                   //返回
-                   NSMutableDictionary *responseDict = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                                                        [NSNumber numberWithInteger:[seqId integerValue]],
-                                                        @"seqId",
-                                                        showShareMenu,
-                                                        @"method",
-                                                        [NSNumber numberWithInteger:state],
-                                                        @"state",
-                                                        [NSNumber numberWithInteger:platformType],
-                                                        @"platform",
-                                                        [NSNumber numberWithBool:end],
-                                                        @"end",
-                                                        callback,
-                                                        @"callback",
-                                                        nil];
-                   if (error)
-                   {
-                       [responseDict setObject:[NSDictionary dictionaryWithObjectsAndKeys:
-                                                [NSNumber numberWithInteger:[error code]],
-                                                @"error_code",
-                                                [error userInfo],
-                                                @"error_msg",
-                                                nil]
-                                        forKey:@"error"];
-                   }
-
-                   if ([contentEntity rawData])
-                   {
-                       [responseDict setObject:[contentEntity rawData] forKey:@"data"];
-                   }
-
-                   [self resultWithData:responseDict command:command];
-
-                   if (_refView)
-                   {
-                       [_refView removeFromSuperview];
-                   }
-               }];
-}
+    });
+   }
 
 - (void)showShareViewWithSeqId:(NSString *)seqId
                         params:(NSDictionary *)params

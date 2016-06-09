@@ -3,6 +3,29 @@
  */
 var cordova = require('cordova');
 
+/**
+ * SDK方法名称
+ * @type {object}
+ */
+var ShareSDKMethodName =
+{
+  "InitSDKAndSetPlatfromConfig": "initSDKAndSetPlatfromConfig",
+  "Authorize": "authorize",
+  "CancelAuthorize": "cancelAuthorize",
+  "IsAuthorizedValid": "isAuthorizedValid",
+  "IsClientValid": "isClientValid",
+
+  "GetUserInfo": "getUserInfo",
+  "GetAuthInfo": "getAuthInfo",
+  "ShareContent": "shareContent",
+  "OneKeyShareContent": "oneKeyShareContent",
+  "ShowShareMenu": "showShareMenu",
+
+  "ShowShareView": "showShareView",
+  "GetFriendList": "getFriendList",
+  "AddFriend": "addFriend",
+  "CloseSSOWhenAuthorize": "closeSSOWhenAuthorize"
+};
 
 function ShareSDK() {
   this.isRunning = false;         //是否正在与本地进行交互
@@ -17,30 +40,6 @@ function ShareSDK() {
   this.jsLog = null;
   this.PLATFORM_SHARE = null;
 
-
-  /**
-   * SDK方法名称
-   * @type {object}
-   */
-  this.ShareSDKMethodName =
-  {
-    "InitSDKAndSetPlatfromConfig": "initSDKAndSetPlatfromConfig",
-    "Authorize": "authorize",
-    "CancelAuthorize": "cancelAuthorize",
-    "IsAuthorizedValid": "isAuthorizedValid",
-    "IsClientValid": "isClientValid",
-
-    "GetUserInfo": "getUserInfo",
-    "GetAuthInfo": "getAuthInfo",
-    "ShareContent": "shareContent",
-    "OneKeyShareContent": "oneKeyShareContent",
-    "ShowShareMenu": "showShareMenu",
-
-    "ShowShareView": "showShareView",
-    "GetFriendList": "getFriendList",
-    "AddFriend": "addFriend",
-    "CloseSSOWhenAuthorize": "closeSSOWhenAuthorize"
-  };
 
 
   /**
@@ -155,36 +154,38 @@ IOSAPICaller.prototype = {
          * }
    */
   callback: function (response) {
+    response = JSON.parse(response);
     if (response.callback) {
+
       var callbackFunc = eval(response.callback);
       if (callbackFunc) {
         var method = response.method;
         switch (method) {
-          case this.ShareSDKMethodName.Authorize:
-            callbackFunc(response.seqId, response.platform, response.state, response.error);
+          case ShareSDKMethodName.Authorize:
+            callbackFunc(response.seqId, response.platform, response.state, response.user, response.error);
             break;
-          case this.ShareSDKMethodName.GetUserInfo:
+          case ShareSDKMethodName.GetUserInfo:
             callbackFunc(response.seqId, response.platform, response.state, response.data, response.error);
             break;
-          case this.ShareSDKMethodName.IsAuthorizedValid:
+          case ShareSDKMethodName.IsAuthorizedValid:
             callbackFunc(response.seqId, response.platform, response.data);
             break;
-          case this.ShareSDKMethodName.IsClientValid:
+          case ShareSDKMethodName.IsClientValid:
             callbackFunc(response.seqId, response.platform, response.data);
             break;
-          case this.ShareSDKMethodName.ShareContent:
-          case this.ShareSDKMethodName.OneKeyShareContent:
-          case this.ShareSDKMethodName.ShowShareMenu:
-          case this.ShareSDKMethodName.ShowShareView:
+          case ShareSDKMethodName.ShareContent:
+          case ShareSDKMethodName.OneKeyShareContent:
+          case ShareSDKMethodName.ShowShareMenu:
+          case ShareSDKMethodName.ShowShareView:
             callbackFunc(response.seqId, response.platform, response.state, response.data, response.error);
             break;
-          case this.ShareSDKMethodName.GetFriendList:
+          case ShareSDKMethodName.GetFriendList:
             callbackFunc(response.seqId, response.platform, response.state, response.data, response.error);
             break;
-          case this.ShareSDKMethodName.AddFriend:
+          case ShareSDKMethodName.AddFriend:
             callbackFunc(response.seqId, response.platform, response.state, response.error);
             break;
-          case this.ShareSDKMethodName.GetAuthInfo:
+          case ShareSDKMethodName.GetAuthInfo:
             callbackFunc(response.seqId, response.platform, response.data);
             break;
         }
@@ -208,11 +209,12 @@ IOSAPICaller.prototype = {
   /**
    * 调用方法
    * @param request    请求信息
+   * @param  cb         回调函数
    */
-  callMethod: function (request) {
+  callMethod: function (request, cb) {
     this.requestes[request.seqId] = request;
 
-    cordova.exec(this.callback, function (err) {
+    cordova.exec(cb, function (err) {
       alert('原生代码调用返回错误');
     }, "ShareSDK", "dispatcher", ['call', request.method, request.seqId, this.getParams(request.seqId)]);
 
@@ -275,32 +277,32 @@ AndroidAPICaller.prototype = {
         var method = response.method;
 
         switch (method) {
-          case this.ShareSDKMethodName.Authorize:
-            callbackFunc(response.seqId, response.platform, response.state, response.error);
+          case ShareSDKMethodName.Authorize:
+            callbackFunc(response.seqId, response.platform, response.state, response.user,response.error);
             break;
-          case this.ShareSDKMethodName.GetUserInfo:
+          case ShareSDKMethodName.GetUserInfo:
             callbackFunc(response.seqId, response.platform, response.state, response.data, response.error);
             break;
-          case this.ShareSDKMethodName.IsAuthorizedValid:
+          case ShareSDKMethodName.IsAuthorizedValid:
             callbackFunc(response.seqId, response.platform, response.data);
             break;
-          case this.ShareSDKMethodName.IsClientValid:
+          case ShareSDKMethodName.IsClientValid:
             callbackFunc(response.seqId, response.platform, response.data);
             break;
-          case this.ShareSDKMethodName.ShareContent:
-          case this.ShareSDKMethodName.OneKeyShareContent:
-          case this.ShareSDKMethodName.ShowShareMenu:
-          case this.ShareSDKMethodName.ShowShareView:
+          case ShareSDKMethodName.ShareContent:
+          case ShareSDKMethodName.OneKeyShareContent:
+          case ShareSDKMethodName.ShowShareMenu:
+          case ShareSDKMethodName.ShowShareView:
             isShare = true;
             callbackFunc(response.seqId, response.platform, response.state, response.data, response.error);
             break;
-          case this.ShareSDKMethodName.GetFriendList:
+          case ShareSDKMethodName.GetFriendList:
             callbackFunc(response.seqId, response.platform, response.state, response.data, response.error);
             break;
-          case this.ShareSDKMethodName.AddFriend:
+          case ShareSDKMethodName.AddFriend:
             callbackFunc(response.seqId, response.platform, response.state, response.error);
             break;
-          case this.ShareSDKMethodName.GetAuthInfo:
+          case ShareSDKMethodName.GetAuthInfo:
             callbackFunc(response.seqId, response.platform, response.data);
             break;
         }
@@ -409,9 +411,10 @@ ShareSDK.prototype = {
    * 调用方法
    * @param method        方法
    * @param params        参数
+   * @param cb            回调函数
    * @private
    */
-  CallMethod: function (method, params) {
+  CallMethod: function (method, params, cb) {
     var self = this;
     this.CheckInit(method, params, function (method, params) {
       self.seqId++;
@@ -426,26 +429,27 @@ ShareSDK.prototype = {
         self.lastRequest = req;
       }
 
-      self.SendRequest();
+      self.SendRequest(cb);
     });
     return self.seqId;
   },
 
   /**
    * 发送请求
+   * @param   回调函数
    * @private
    */
-  SendRequest: function () {
+  SendRequest: function (cb) {
     if (!this.isRunning && this.firstRequest) {
       this.isRunning = true;
-      this.apiCaller.callMethod(this.firstRequest);
+      this.apiCaller.callMethod(this.firstRequest,cb);
       var self = this;
       setTimeout(function () {
 
         self.isRunning = false;
         //直接发送下一个请求
         self.NextRequest();
-        self.SendRequest();
+        self.SendRequest(cb);
 
       }, 50);
     }
@@ -497,7 +501,7 @@ ShareSDK.prototype = {
       "appKey": appKey,
       "platformConfig": platformConfig
     };
-    this.CallMethod(this.ShareSDKMethodName.InitSDKAndSetPlatfromConfig, params);
+    this.CallMethod(ShareSDKMethodName.InitSDKAndSetPlatfromConfig, params);
   },
 
   /**
@@ -508,11 +512,11 @@ ShareSDK.prototype = {
   authorize: function (platform, callback) {
     var params =
     {
-      "platform": platform,
-      "callback": "(" + callback.toString() + ")"
+      "platform": platform
+      //,"callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.Authorize, params);
+    return this.CallMethod(ShareSDKMethodName.Authorize, params, callback);
   },
 
   /**
@@ -525,7 +529,7 @@ ShareSDK.prototype = {
       "platform": platform
     };
 
-    this.CallMethod(this.ShareSDKMethodName.CancelAuthorize, params);
+    this.CallMethod(ShareSDKMethodName.CancelAuthorize, params);
   },
 
   /**
@@ -541,7 +545,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.IsAuthorizedValid, params);
+    return this.CallMethod(ShareSDKMethodName.IsAuthorizedValid, params);
   },
 
   /**
@@ -557,7 +561,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.IsClientValid, params);
+    return this.CallMethod(ShareSDKMethodName.IsClientValid, params);
   },
 
   /**
@@ -572,7 +576,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.GetUserInfo, params);
+    return this.CallMethod(ShareSDKMethodName.GetUserInfo, params);
   },
 
   /**
@@ -587,7 +591,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.GetAuthInfo, params);
+    return this.CallMethod(ShareSDKMethodName.GetAuthInfo, params);
   },
 
   /**
@@ -604,7 +608,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.ShareContent, params);
+    return this.CallMethod(ShareSDKMethodName.ShareContent, params);
   },
 
   /**
@@ -621,7 +625,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.OneKeyShareContent, params);
+    return this.CallMethod(ShareSDKMethodName.OneKeyShareContent, params);
   },
 
   /**
@@ -643,7 +647,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.ShowShareMenu, params);
+    return this.CallMethod(ShareSDKMethodName.ShowShareMenu, params);
   },
 
   /**
@@ -660,7 +664,7 @@ ShareSDK.prototype = {
       "callback": "(" + callback.toString() + ")"
     };
 
-    return this.CallMethod(this.ShareSDKMethodName.ShowShareView, params);
+    return this.CallMethod(ShareSDKMethodName.ShowShareView, params);
   },
 
   /**
@@ -680,7 +684,7 @@ ShareSDK.prototype = {
       "account": account,
       "callback": "(" + callback.toString() + ")"
     };
-    return this.CallMethod(this.ShareSDKMethodName.GetFriendList, params);
+    return this.CallMethod(ShareSDKMethodName.GetFriendList, params);
   },
 
   /**
@@ -696,7 +700,7 @@ ShareSDK.prototype = {
       "friendName": friendName,
       "callback": "(" + callback.toString() + ")"
     }
-    return this.CallMethod(this.ShareSDKMethodName.AddFriend, params);
+    return this.CallMethod(ShareSDKMethodName.AddFriend, params);
   },
 
   /**
@@ -710,7 +714,7 @@ ShareSDK.prototype = {
       "disableSSO": disableSSO
     };
 
-    this.CallMethod(this.ShareSDKMethodName.CloseSSOWhenAuthorize, params);
+    this.CallMethod(ShareSDKMethodName.CloseSSOWhenAuthorize, params);
   }
 };
 
